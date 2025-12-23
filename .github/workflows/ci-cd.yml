@@ -30,11 +30,15 @@ jobs:
       with:
         image-ref: my-java-app:latest
 
-    - name: SonarQube scan
+    - name: SonarCloud Scan
       uses: sonarsource/sonarcloud-github-action@v2
       with:
         args: >
-          -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+          -Dsonar.projectKey=demo-app
+          -Dsonar.organization=abhi10011990
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
 
     # -------- ECR login and push using OIDC --------
     - name: Configure AWS credentials
