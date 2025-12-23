@@ -37,10 +37,7 @@ jobs:
 
     # 6️⃣ SonarCloud Scan
     - name: SonarCloud Scan
-      run: mvn sonar:sonar \
-        -Dsonar.projectKey=abhi10011990_demo-app \
-        -Dsonar.organization=abhi10011990 \
-        -Dsonar.host.url=https://sonarcloud.io
+      run: mvn clean package sonar:sonar -Dsonar.projectKey=abhi10011990_demo-app -Dsonar.organization=abhi10011990 -Dsonar.host.url=https://sonarcloud.io
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
