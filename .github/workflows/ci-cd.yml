@@ -1,0 +1,57 @@
+name: CI-CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: "17"
+        distribution: "temurin"
+
+    - name: Build with Maven
+      run: mvn clean package -DskipTests
+
+    - name: Build Docker image
+      run: docker build -t my-java-app:latest .
+
+    - name: Scan image with Trivy
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: my-java-app:latest
+
+    - name: SonarQube scan
+      uses: sonarsource/sonarcloud-github-action@v2
+      with:
+        args: >
+          -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+
+    # -------- ECR login and push using OIDC --------
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v3
+      with:
+        role-to-assume: arn:aws:iam::541320879609:role/admin-practice-role
+        aws-region: ap-northeast-1
+
+    - name: Login to Amazon ECR
+      run: |
+        aws ecr get-login-password --region ap-northeast-1 | \
+        docker login --username AWS --password-stdin 541320879609.dkr.ecr.ap-northeast-1.amazonaws.com
+
+    - name: Tag Docker image
+      run: |
+        docker tag my-java-app:latest 541320879609.dkr.ecr.ap-northeast-1.amazonaws.com/cicd/my-java-app:latest
+
+    - name: Push Docker image to ECR
+      run: |
+        docker push 541320879609.dkr.ecr.ap-northeast-1.amazonaws.com/cicd/my-java-app:latest
