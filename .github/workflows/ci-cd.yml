@@ -10,7 +10,6 @@ permissions:
   id-token: write
   contents: read
 
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -59,12 +58,23 @@ jobs:
         aws ecr get-login-password --region ap-northeast-1 | \
         docker login --username AWS --password-stdin 541320879609.dkr.ecr.ap-northeast-1.amazonaws.com
 
-    # 9️⃣ Tag Docker image
+    # 9️⃣ Tag Docker image with Git SHA
     - name: Tag Docker image
       run: |
-        docker tag my-java-app:latest 541320879609.dkr.ecr.ap-northeast-1.amazonaws.com/cicd/my-java-app:latest
+        IMAGE_TAG=${{ github.sha }}
+        docker tag my-java-app:latest 541320879609.dkr.ecr.ap-northeast-1.amazonaws.com/cicd/my-java-app:$IMAGE_TAG
+        echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
 
     # 🔟 Push Docker image to ECR
     - name: Push Docker image to ECR
       run: |
-        docker push 541320879609.dkr.ecr.ap-northeast-1.amazonaws.com/cicd/my-java-app:latest
+        docker push 541320879609.dkr.ecr.ap-northeast-1.amazonaws.com/cicd/my-java-app:$IMAGE_TAG
+
+    # 1️⃣1️⃣ Trigger CD pipeline in separate repo
+    - name: Trigger CD
+      uses: peter-evans/repository-dispatch@v2
+      with:
+        token: ${{ secrets.CD_REPO_PAT }}                  # Use the PAT, not GITHUB_TOKEN
+        repository: abhi10011990/demo-CDapp-gitops       # CD repo full name
+        event-type: ci-completed
+        client-payload: '{"image_tag":"${{ github.sha }}"}'
