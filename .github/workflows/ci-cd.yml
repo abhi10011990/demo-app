@@ -11,51 +11,58 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    # 1️⃣ Checkout repo
     - uses: actions/checkout@v3
 
+    # 2️⃣ Set up Java
     - name: Set up JDK 17
       uses: actions/setup-java@v3
       with:
         java-version: "17"
         distribution: "temurin"
 
+    # 3️⃣ Build Maven project
     - name: Build with Maven
       run: mvn clean package -DskipTests
 
+    # 4️⃣ Build Docker image
     - name: Build Docker image
       run: docker build -t my-java-app:latest .
 
+    # 5️⃣ Scan Docker image with Trivy
     - name: Scan image with Trivy
       uses: aquasecurity/trivy-action@master
       with:
         image-ref: my-java-app:latest
 
+    # 6️⃣ SonarCloud Scan
     - name: SonarCloud Scan
-      uses: sonarsource/sonarcloud-github-action@v2
-      with:
-        args: >
-          -Dsonar.projectKey=demo-app
-          -Dsonar.organization=abhi10011990
+      run: mvn sonar:sonar \
+        -Dsonar.projectKey=abhi10011990_demo-app \
+        -Dsonar.organization=abhi10011990 \
+        -Dsonar.host.url=https://sonarcloud.io
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-
-    # -------- ECR login and push using OIDC --------
+    # 7️⃣ Configure AWS credentials
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v3
       with:
         role-to-assume: arn:aws:iam::541320879609:role/admin-practice-role
         aws-region: ap-northeast-1
 
+    # 8️⃣ Login to Amazon ECR
     - name: Login to Amazon ECR
       run: |
         aws ecr get-login-password --region ap-northeast-1 | \
         docker login --username AWS --password-stdin 541320879609.dkr.ecr.ap-northeast-1.amazonaws.com
 
+    # 9️⃣ Tag Docker image
     - name: Tag Docker image
       run: |
         docker tag my-java-app:latest 541320879609.dkr.ecr.ap-northeast-1.amazonaws.com/cicd/my-java-app:latest
 
+    # 🔟 Push Docker image to ECR
     - name: Push Docker image to ECR
       run: |
         docker push 541320879609.dkr.ecr.ap-northeast-1.amazonaws.com/cicd/my-java-app:latest
