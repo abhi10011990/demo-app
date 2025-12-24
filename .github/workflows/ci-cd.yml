@@ -78,4 +78,3 @@ jobs:
         repository: abhi10011990/demo-CDapp-gitops       # CD repo full name
         event-type: ci-completed
         client-payload: '{"image_tag":"${{ github.sha }}"}'
-
