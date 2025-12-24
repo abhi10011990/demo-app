@@ -79,4 +79,3 @@ jobs:
         event-type: ci-completed
         client-payload: '{"image_tag":"${{ github.sha }}"}'
 
-
